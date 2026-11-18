@@ -66,7 +66,7 @@ export async function startUpload(file) {
         mimeType: type,
         description: guest ? 'Uploaded by ' + guest : 'Uploaded by a guest',
         // Tag used by the album's "filter by name" buttons.
-        appProperties: guest ? { by: fitBytes(guest, 110), byKey: nameKey(guest) } : { byKey: '-' },
+        appProperties: uploaderTag(guest),
       }),
     }
   );
@@ -198,7 +198,13 @@ function whoUploaded(f) {
   return { key: nameKey(name), name };
 }
 
-function uploader(description) {
+/** The name tag stored on each upload (see scripts/migrate-tags.js for older files). */
+export function uploaderTag(guest) {
+  return guest ? { by: fitBytes(guest, 110), byKey: nameKey(guest) } : { byKey: '-' };
+}
+
+/** The guest name from an "Uploaded by …" description ('' for no name). */
+export function uploader(description) {
   const m = /^Uploaded by (.+)$/.exec(description || '');
   return m && m[1] !== 'a guest' ? m[1] : '';
 }

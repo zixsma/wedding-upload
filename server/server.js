@@ -20,6 +20,7 @@ const STATIC = {
   '/': file('public/index.html', 'text/html; charset=utf-8', 'no-cache'),
   '/photos/grownups.webp': file('photos/grownups.webp', 'image/webp', 'public, max-age=86400'),
   '/photos/kids.webp': file('photos/kids.webp', 'image/webp', 'public, max-age=86400'),
+  '/photos/og.jpg': file('photos/og.jpg', 'image/jpeg', 'public, max-age=86400'),
 };
 STATIC['/index.html'] = STATIC['/'];
 
