@@ -1,0 +1,11 @@
+{
+  "name": "wedding-upload",
+  "private": true,
+  "type": "module",
+  "engines": { "node": ">=20.12" },
+  "scripts": {
+    "start": "node server/server.js",
+    "token": "node scripts/get-refresh-token.js",
+    "check": "node server/check-setup.js"
+  }
+}

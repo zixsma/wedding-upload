@@ -1,0 +1,5 @@
+.env
+.git
+legacy
+node_modules
+*.md

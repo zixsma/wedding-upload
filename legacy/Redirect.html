@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<!-- Paste into the old Apps Script project's "Index" file (replacing it) and redeploy as a
+     new version, so old QR codes / links send guests to the new site.
+     Change NEW_URL below. ?page=upload is passed along. -->
+<html>
+<head>
+<base target="_top">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+  body { font-family: system-ui, sans-serif; text-align: center; padding: 48px 16px; color: #333; }
+  a { display: inline-block; margin-top: 16px; padding: 14px 24px; border-radius: 999px;
+      background: #c06c84; color: #fff; text-decoration: none; font-size: 18px; }
+</style>
+</head>
+<body>
+  <p>เว็บอัลบั้มย้ายไปที่ใหม่แล้ว · The album has moved</p>
+  <a id="go" href="#">ไปที่อัลบั้ม · Open the album</a>
+<script>
+  var NEW_URL = 'https:\/\/photos.example.com/';
+  google.script.url.getLocation(function (loc) {
+    var url = NEW_URL + (loc.parameter.page === 'upload' ? '?page=upload' : '');
+    document.getElementById('go').href = url;
+    try { window.top.location.href = url; } catch (e) { /* the button still works */ }
+  });
+</script>
+</body>
+</html>

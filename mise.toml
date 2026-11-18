@@ -1,0 +1,4 @@
+# Tool versions for this project
+
+[tools]
+node = "26"

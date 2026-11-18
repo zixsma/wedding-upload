@@ -1,10 +1,14 @@
 <!DOCTYPE html>
 <html lang="th">
 <head>
-<base target="_top">
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Ruengrin ♥ Tanakrit</title>
+<title>Ruengrin ♥ Tanakrit · Guest album</title>
+<meta name="description" content="Share your photos and videos from our wedding · ส่งรูปและวิดีโอจากงานแต่งของเรา">
+<meta property="og:title" content="Ruengrin ♥ Tanakrit · Guest album">
+<meta property="og:description" content="Share your photos and videos from our wedding · ส่งรูปและวิดีโอจากงานแต่งของเรา">
+<meta property="og:type" content="website">
+<meta property="og:image" content="__ORIGIN__/photos/grownups.webp">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Gochi+Hand&family=Itim&display=swap" rel="stylesheet">
@@ -331,7 +335,8 @@
 <script>
 (function () {
   const CHUNK = 8 * 1024 * 1024; // must be a multiple of 256 KB
-  const PREVIEW = typeof google === 'undefined' || !google.script; // opened outside Apps Script
+  // Opened as a local file or with ?preview: fake data, nothing is sent anywhere.
+  const PREVIEW = location.protocol === 'file:' || new URLSearchParams(location.search).has('preview');
 
   const $ = (id) => document.getElementById(id);
 
@@ -366,8 +371,16 @@
   }
   function server(fn, arg) {
     if (PREVIEW) return new Promise(r => setTimeout(() => r(MOCK[fn](arg)), 400));
-    return new Promise((resolve, reject) => {
-      google.script.run.withSuccessHandler(resolve).withFailureHandler(reject)[fn](arg);
+    return fetch('/api/' + fn, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(arg || {}),
+    }).then(
+      r => r.json().catch(() => ({ ok: false, error: 'HTTP ' + r.status })),
+      () => ({ ok: false, error: 'ไม่มีสัญญาณอินเทอร์เน็ต · No connection' })
+    ).then(res => {
+      if (!res.ok) throw new Error(res.error || 'Something went wrong. Please try again.');
+      return res.data;
     });
   }
 
@@ -386,7 +399,7 @@
   const keyOf = (s) => String(s || '').replace(/\s+/g, ' ').trim().toLowerCase() || '-';
   const NO_NAME = 'ไม่ระบุชื่อ · No name';
 
-  const DRIVE = 'https:\/\/drive.google.com'; // slashes escaped on purpose: Apps Script breaks on a plain double slash inside a string
+  const DRIVE = 'https://drive.google.com';
   const thumb = (it, w) => it.mock || DRIVE + '/thumbnail?id=' + encodeURIComponent(it.id) + '&sz=w' + w;
 
   function skeleton(n) {
@@ -804,8 +817,7 @@
     loadPeople(false);
     loadAlbum(true);
   }
-  if (PREVIEW) start(Object.fromEntries(new URLSearchParams(location.search)));
-  else google.script.url.getLocation(loc => start(loc.parameter));
+  start(Object.fromEntries(new URLSearchParams(location.search)));
 })();
 </script>
 </body>

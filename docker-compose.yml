@@ -1,0 +1,16 @@
+services:
+  app:
+    build: .
+    env_file: .env
+    restart: unless-stopped
+    # Not published to the host: only reachable through the tunnel.
+    # To test on this machine, uncomment:
+    # ports: ["8080:8080"]
+
+  tunnel:
+    image: cloudflare/cloudflared:latest
+    command: tunnel --no-autoupdate run
+    environment:
+      TUNNEL_TOKEN: ${TUNNEL_TOKEN}
+    restart: unless-stopped
+    depends_on: [app]
