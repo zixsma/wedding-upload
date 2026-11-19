@@ -372,7 +372,7 @@
   .show-qr-text b { display: block; color: var(--pink-deep); font-weight: 400; font-size: 1.2em; }
   .show-qr-text span { display: block; }
   .show-qr-text small { display: block; color: var(--ink-soft); font-size: .75em; margin-top: 4px; }
-  .show.bare .show-who, .show.bare .show-qr, .show.bare .show-title { display: none; }
+  .show.no-names .show-who, .show.no-names .show-title, .show.no-names .show-qr { display: none; }
   .show-toast {
     position: absolute; top: 2.5vh; left: 50%; z-index: 3; transform: translate(-50%, -20px);
     background: var(--pink); color: #fff; border-radius: 999px; padding: 10px 24px;
@@ -468,6 +468,25 @@
     padding: 10px 22px; font-size: clamp(15px, 1.4vw, 24px); animation: pulse 1.6s ease-in-out infinite;
   }
   .show-music-hint[hidden] { display: none; }
+  .share-ctl { display: flex; gap: 8px; }
+  .share-ctl input {
+    flex: 1; min-width: 0; font: inherit; font-size: 13px; padding: 7px 10px; border-radius: 12px;
+    border: 1.5px solid var(--pink-soft); background: var(--pink-wash); color: var(--ink-soft);
+  }
+  .show-start {
+    position: absolute; inset: 0; z-index: 5; display: grid; place-items: center;
+    background: rgba(29, 13, 19, .55); backdrop-filter: blur(3px);
+  }
+  .show-start[hidden] { display: none; }
+  .show-start button {
+    display: flex; flex-direction: column; align-items: center; gap: 8px; cursor: pointer;
+    font: inherit; font-size: clamp(20px, 2.4vw, 34px); color: #fff; background: var(--pink);
+    border: 0; border-radius: 28px; padding: 26px 40px; box-shadow: 0 10px 40px rgba(0, 0, 0, .45);
+    max-width: 90vw;
+  }
+  .show-start .big { font-size: 2.2em; line-height: 1; }
+  .show-start small { font-size: .65em; opacity: .9; }
+  .show-start button:focus-visible { outline: 4px solid #fff; outline-offset: 4px; }
   .show:not([hidden]) .show-paused:not([hidden]) ~ .show-fs { top: calc(2.5vh + 44px); }
   @media (prefers-reduced-motion: reduce) {
     .show-layer.on img { animation: none; }
@@ -606,8 +625,16 @@
     <p class="small">สแกน QR ด้านล่างเพื่อส่งรูป · Scan the QR code to share yours</p>
   </div>
   <div class="show-paused" id="showPaused" hidden>❚❚ หยุดชั่วคราว · Paused</div>
+  <!-- Shown when a shared link with music is opened: browsers need one tap before playing sound. -->
+  <div class="show-start" id="showStart" hidden>
+    <button type="button" id="showStartBtn">
+      <span class="big">▶</span>
+      <span>เริ่มดูสไลด์โชว์ · Start the slideshow</span>
+      <small id="showStartSub">🎵 พร้อมเพลง · with music</small>
+    </button>
+  </div>
   <div class="show-music-hint" id="musicHint" hidden>🎵 คลิกที่ใดก็ได้เพื่อเริ่มเพลง · Click anywhere to start the music</div>
-  <div class="show-help">Space: หยุด/เล่น · pause &nbsp; ← →: ก่อนหน้า/ถัดไป · prev/next &nbsp; M: เสียงวิดีโอ · sound &nbsp; B: เพลง · music &nbsp; S: ตั้งค่า · settings &nbsp; N: ซ่อนชื่อ/QR · names &amp; QR &nbsp; F: เต็มจอ · full screen &nbsp; Q: ออก · exit</div>
+  <div class="show-help">Space: หยุด/เล่น · pause &nbsp; ← →: ก่อนหน้า/ถัดไป · prev/next &nbsp; M: เสียงวิดีโอ · sound &nbsp; B: เพลง · music &nbsp; S: ตั้งค่า · settings &nbsp; N: ชื่อ/QR · names &amp; QR &nbsp; F: เต็มจอ · full screen &nbsp; Q: ออก · exit</div>
   <div class="show-tools">
     <a class="show-exit" id="showExit" href="/">← ออกไปที่อัลบั้ม · Exit to album</a>
     <button class="show-gear" id="showGear" type="button" aria-expanded="false" aria-controls="showPanel">⚙️ ตั้งค่า · Settings</button>
@@ -616,6 +643,14 @@
     <label class="opt-row">
       <input type="checkbox" id="optVideo">
       <span>เล่นวิดีโออัตโนมัติ · Auto-play videos<small>ปิด = แสดงเป็นภาพนิ่ง · Off shows a still picture</small></span>
+    </label>
+    <label class="opt-row">
+      <input type="checkbox" id="optNames">
+      <span>แสดงชื่อและ QR · Show names &amp; QR code<small>ชื่อคนถ่าย ชื่อบ่าวสาวด้านบน และ QR code · Guest name, your names at the top, and the QR code</small></span>
+    </label>
+    <label class="opt-row">
+      <input type="checkbox" id="optSound">
+      <span>เสียงวิดีโอ · Video sound<small>เบราว์เซอร์เปิดเสียงได้หลังแตะหน้าจอครั้งแรก · Browsers allow sound after the first tap or click</small></span>
     </label>
     <label class="opt-row opt-col" for="optTime">
       <span>เวลาต่อรูป · Slide time: <b id="optTimeOut"></b></span>
@@ -642,6 +677,14 @@
       <div class="music-recent" id="musicRecent" hidden>
         <small>ล่าสุด · Recent</small>
         <ul id="musicHistory"></ul>
+      </div>
+    </div>
+    <div class="opt-row opt-col">
+      <span>🔗 แชร์สไลด์โชว์ · Share this slideshow</span>
+      <small>ลิงก์นี้รวมเพลงและการตั้งค่าด้านบน คนที่เปิดแตะครั้งเดียวก็เริ่มดูพร้อมเพลง · The link includes this music and these settings; people tap once to start with music</small>
+      <div class="share-ctl">
+        <input type="text" id="shareUrl" readonly aria-label="ลิงก์สไลด์โชว์ · Slideshow link">
+        <button type="button" class="music-btn" id="shareBtn">คัดลอก · Copy</button>
       </div>
     </div>
     <button class="show-panel-close" id="showPanelClose" type="button">เสร็จ · Done</button>
@@ -1300,16 +1343,20 @@
   // Options from the ⚙️ panel. Saved on this laptop; a link can also set them,
   // e.g. /?page=show&time=10&video=0 (handy as a bookmark on the projector laptop).
   const TRANSITIONS = ['fade', 'slide', 'zoom', 'none'];
-  const opts = { video: true, time: 7, trans: 'fade', music: '', musicOn: true, musicVol: 60 };
+  const opts = { video: true, names: true, sound: false, time: 7, trans: 'fade', music: '', musicOn: true, musicVol: 60 };
   try { Object.assign(opts, JSON.parse(localStorage.getItem('showOpts') || '{}')); } catch (_) {}
   {
     const q = new URLSearchParams(location.search);
     if (q.has('video')) opts.video = !/^(0|off|false|no)$/i.test(q.get('video'));
     if (q.has('time')) opts.time = Number(q.get('time'));
+    if (q.has('sound')) opts.sound = !/^(0|off|false|no)$/i.test(q.get('sound'));
+    if (q.has('names')) opts.names = !/^(0|off|false|no)$/i.test(q.get('names'));
     if (q.has('transition')) opts.trans = String(q.get('transition')).toLowerCase();
     if (q.has('music')) { opts.music = q.get('music'); opts.musicOn = true; }
   }
   opts.video = opts.video !== false;
+  opts.names = opts.names !== false;
+  opts.sound = opts.sound === true;
   opts.time = Math.min(30, Math.max(3, Math.round(Number(opts.time)) || 7));
   if (!TRANSITIONS.includes(opts.trans)) opts.trans = 'fade';
   opts.music = String(opts.music || '').trim().slice(0, 500);
@@ -1340,6 +1387,7 @@
     drawQr();
     keepAwake();
     setupMusic();
+    showStartScreen();
     idleCursor();
     pollShow(true);
   }
@@ -1492,7 +1540,7 @@
   function playVideo(v, src) {
     const mine = loadSeq;
     let started = false;
-    v.muted = !ss.sound;
+    v.muted = !opts.sound;
     v.src = src;
     v.onplaying = () => {
       if (mine !== loadSeq) return;
@@ -1508,7 +1556,10 @@
     // Nothing after 8 s (slow connection, huge file): show the next one instead.
     clearTimeout(ss.timer);
     ss.timer = setTimeout(() => { if (!started && mine === loadSeq && !ss.paused) { stopVideo(v); step(1); } }, 8000);
-    if (!ss.paused) v.play().catch(() => {});
+    if (!ss.paused) v.play().catch(() => {
+      // Sound isn't allowed before the first tap/click: play muted for now (the first tap turns it on).
+      if (mine === loadSeq && !v.muted) { v.muted = true; updateDuck(); v.play().catch(() => {}); }
+    });
   }
   // Move on when the video ends or after VIDEO_MAX_MS of playing, whichever comes first.
   function videoTimer(v) {
@@ -1519,13 +1570,25 @@
     const v = ss.layers[ss.cur] && ss.layers[ss.cur].querySelector('video');
     return v && v.getAttribute('src') ? v : null;
   }
-  function toggleSound() {
-    ss.sound = !ss.sound;
+  function setSound(on) {
+    opts.sound = on;
+    $('optSound').checked = on;
     const v = currentVideo();
-    if (v) v.muted = !ss.sound;
+    if (v) v.muted = !on;
     updateDuck();
-    toast(ss.sound ? '🔊 เปิดเสียงวิดีโอ · Video sound on' : '🔇 ปิดเสียงวิดีโอ · Video sound off');
+    saveOpts();
   }
+  function toggleSound() {
+    setSound(!opts.sound);
+    toast(opts.sound ? '🔊 เปิดเสียงวิดีโอ · Video sound on' : '🔇 ปิดเสียงวิดีโอ · Video sound off');
+  }
+  // The first tap/click/key on the page counts as permission: turn on the sound of a video
+  // that had to start muted.
+  ['pointerdown', 'keydown'].forEach(ev => document.addEventListener(ev, () => {
+    if (document.body.dataset.view !== 'show' || !opts.sound) return;
+    const v = currentVideo();
+    if (v && v.muted) { v.muted = false; updateDuck(); }
+  }, true));
 
   function ago(t) {
     const m = Math.max(0, Math.round((Date.now() - t) / 60000));
@@ -1577,7 +1640,7 @@
     if (k === ' ' || k === 'k') { e.preventDefault(); togglePause(); }
     else if (k === 'arrowright') step(1);
     else if (k === 'arrowleft') step(-1);
-    else if (k === 'n') showEl.classList.toggle('bare');
+    else if (k === 'n') { setNames(!opts.names); toast(opts.names ? '👤 แสดงชื่อและ QR · Names & QR on' : '🙈 ซ่อนชื่อและ QR · Names & QR off'); }
     else if (k === 'm') toggleSound();
     else if (k === 's') togglePanel();
     else if (k === 'b') toggleMusic();
@@ -1609,13 +1672,18 @@
   const panel = $('showPanel'), gear = $('showGear'), optVideo = $('optVideo'), optTime = $('optTime'), optTrans = $('optTrans');
   function saveOpts() {
     try { localStorage.setItem('showOpts', JSON.stringify(opts)); } catch (_) {}
+    drawShare();
   }
   function drawOpts() {
     optVideo.checked = opts.video;
     optTime.value = opts.time;
     optTrans.value = opts.trans;
+    $('optNames').checked = opts.names;
+    $('optSound').checked = opts.sound;
+    showEl.classList.toggle('no-names', !opts.names);
     showEl.dataset.trans = opts.trans;
     drawMusic();
+    drawShare();
     $('optTimeOut').textContent = opts.time + ' วินาที · ' + opts.time + ' s';
   }
   function togglePanel(open) {
@@ -1645,6 +1713,14 @@
     // Restart the current photo's timer with the new time (videos keep their own timer).
     if (ss.current && !ss.paused && !currentVideo()) schedule();
   });
+  function setNames(on) {
+    opts.names = on;
+    $('optNames').checked = on;
+    showEl.classList.toggle('no-names', !on);
+    saveOpts();
+  }
+  $('optNames').addEventListener('change', () => setNames($('optNames').checked));
+  $('optSound').addEventListener('change', () => setSound($('optSound').checked));
   optTrans.addEventListener('change', () => {
     opts.trans = TRANSITIONS.includes(optTrans.value) ? optTrans.value : 'fade';
     // Move the hidden layer to its new resting place instantly, so nothing flashes across the screen.
@@ -1808,7 +1884,7 @@
     if (!p || !music.ready || !opts.musicOn || !music.src) return;
     const st = p.getPlayerState();
     const playing = (st === YT.PlayerState.PLAYING || st === YT.PlayerState.BUFFERING) && !p.isMuted();
-    $('musicHint').hidden = playing;
+    $('musicHint').hidden = playing || !$('showStart').hidden;
   }
   // Any click or key on the slideshow counts as permission to play sound.
   ['pointerdown', 'keydown'].forEach(ev => document.addEventListener(ev, () => {
@@ -1881,6 +1957,59 @@
     saveOpts();
     if (music.player && music.ready) music.player.setVolume(musicVolume());
   });
+
+  /* ---------- 🔗 share this slideshow ---------- */
+  // A link with the current settings and music built in, e.g.
+  // /?page=show&time=7&transition=fade&video=1&music=https://youtu.be/…
+  // All settings are included so the viewer's own saved settings don't mix in.
+  function shareLink() {
+    const q = new URLSearchParams({ page: 'show', time: opts.time, transition: opts.trans, video: opts.video ? '1' : '0', names: opts.names ? '1' : '0', sound: opts.sound ? '1' : '0' });
+    if (opts.music && opts.musicOn && parseYouTube(opts.music)) q.set('music', opts.music);
+    return location.origin + '/?' + q.toString();
+  }
+  function drawShare() {
+    const el = $('shareUrl');
+    if (el) el.value = shareLink();
+  }
+  $('shareBtn').onclick = () => {
+    const link = shareLink();
+    // Phones: the system share sheet (LINE, Messenger…). Computers: copy to the clipboard.
+    if (navigator.share && window.matchMedia && matchMedia('(pointer: coarse)').matches) {
+      navigator.share({ title: 'Slideshow · Ruengrin ♥ Tanakrit', url: link }).catch(() => {});
+      return;
+    }
+    const fallback = () => { $('shareUrl').select(); toast('กด Ctrl+C เพื่อคัดลอก · Press Ctrl+C to copy'); };
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(link).then(() => toast('🔗 คัดลอกลิงก์แล้ว · Link copied'), fallback);
+    } else fallback();
+  };
+  $('shareUrl').addEventListener('focus', () => $('shareUrl').select());
+
+  // Someone opened a link with music in it: browsers won't play sound until they
+  // tap, so ask for one tap. That tap starts the music (and full screen where possible).
+  function showStartScreen() {
+    const q = new URLSearchParams(location.search);
+    const withMusic = q.has('music') && !!music.src && opts.musicOn;
+    const withSound = q.has('sound') && opts.sound && opts.video;
+    if (!withMusic && !withSound) return;
+    $('showStartSub').textContent = withMusic && withSound ? '🎵 พร้อมเพลงและเสียงวิดีโอ · with music and video sound'
+      : withMusic ? '🎵 พร้อมเพลง · with music' : '🔊 พร้อมเสียงวิดีโอ · with video sound';
+    $('showStart').hidden = false;
+    $('musicHint').hidden = true;
+    $('showStartBtn').focus({ preventScroll: true });
+  }
+  $('showStartBtn').onclick = () => {
+    $('showStart').hidden = true;
+    if (music.src && opts.musicOn) {
+      const p = music.player;
+      if (p && music.ready) { p.unMute(); p.playVideo(); }
+      else setupMusic(); // player still loading: this tap lets it start with sound when ready
+    }
+    // (A video playing muted gets its sound from the page-wide first-tap listener.)
+    const el = document.documentElement;
+    if (!document.fullscreenElement && el.requestFullscreen) el.requestFullscreen().catch(() => {});
+    setTimeout(checkMusicBlocked, 2500);
+  };
 
   // Ask the browser not to dim or sleep the screen (Chrome, Edge, Safari 16.4+).
   async function keepAwake() {
