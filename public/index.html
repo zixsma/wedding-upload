@@ -434,6 +434,40 @@
     background: var(--pink); border: 0; border-radius: 999px; padding: 9px 16px;
   }
   .show-panel :focus-visible { outline: 3px solid var(--pink-soft); outline-offset: 2px; }
+  .show-panel { max-height: calc(100vh - 140px); overflow-y: auto; }
+  .opt-row input[type=url] {
+    width: 100%; font: inherit; font-size: 15px; padding: 8px 12px; border-radius: 12px;
+    border: 1.5px solid var(--pink-soft); background: var(--pink-wash); color: var(--ink); outline: none;
+  }
+  .opt-row input[type=url]:focus { border-color: var(--pink); }
+  .music-ctl { display: flex; gap: 10px; align-items: center; }
+  .music-btn {
+    flex: none; font: inherit; font-size: 15px; cursor: pointer; color: var(--pink-deep); background: #fff;
+    border: 1.5px solid var(--pink); border-radius: 999px; padding: 6px 14px;
+  }
+  .music-vol { flex: 1; display: flex; align-items: center; gap: 6px; font-size: 14px; }
+  .music-vol input { flex: 1; accent-color: var(--pink); }
+  #musicStatus.err { color: var(--err); }
+  .music-recent[hidden] { display: none; }
+  .music-recent ul { list-style: none; margin: 4px 0 0; padding: 0; }
+  .music-recent li { display: flex; align-items: center; gap: 4px; border-top: 1px solid var(--pink-wash); }
+  .music-recent li button { font: inherit; background: none; border: 0; cursor: pointer; color: var(--ink); }
+  .music-recent .use {
+    flex: 1; min-width: 0; text-align: left; font-size: 14px; padding: 7px 4px;
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap; border-radius: 8px;
+  }
+  .music-recent .use:hover { background: var(--pink-wash); }
+  .music-recent .use.on { color: var(--pink-deep); }
+  .music-recent .rm-link { flex: none; color: var(--ink-soft); font-size: 15px; padding: 4px 8px; border-radius: 8px; }
+  .music-recent .rm-link:hover { color: var(--err); background: var(--pink-wash); }
+  /* Hidden YouTube player: kept on screen (some browsers pause off-screen players) but behind the photos. */
+  .yt-holder { position: absolute; left: 0; bottom: 0; width: 200px; height: 200px; z-index: -1; opacity: .01; pointer-events: none; }
+  .show-music-hint {
+    position: absolute; left: 50%; bottom: 16vh; transform: translateX(-50%); z-index: 3; white-space: nowrap;
+    background: rgba(0, 0, 0, .6); border: 1px solid rgba(255, 255, 255, .4); border-radius: 999px;
+    padding: 10px 22px; font-size: clamp(15px, 1.4vw, 24px); animation: pulse 1.6s ease-in-out infinite;
+  }
+  .show-music-hint[hidden] { display: none; }
   .show:not([hidden]) .show-paused:not([hidden]) ~ .show-fs { top: calc(2.5vh + 44px); }
   @media (prefers-reduced-motion: reduce) {
     .show-layer.on img { animation: none; }
@@ -572,7 +606,8 @@
     <p class="small">สแกน QR ด้านล่างเพื่อส่งรูป · Scan the QR code to share yours</p>
   </div>
   <div class="show-paused" id="showPaused" hidden>❚❚ หยุดชั่วคราว · Paused</div>
-  <div class="show-help">Space: หยุด/เล่น · pause &nbsp; ← →: ก่อนหน้า/ถัดไป · prev/next &nbsp; M: เสียงวิดีโอ · sound &nbsp; S: ตั้งค่า · settings &nbsp; N: ซ่อนชื่อ/QR · names &amp; QR &nbsp; F: เต็มจอ · full screen &nbsp; Q: ออก · exit</div>
+  <div class="show-music-hint" id="musicHint" hidden>🎵 คลิกที่ใดก็ได้เพื่อเริ่มเพลง · Click anywhere to start the music</div>
+  <div class="show-help">Space: หยุด/เล่น · pause &nbsp; ← →: ก่อนหน้า/ถัดไป · prev/next &nbsp; M: เสียงวิดีโอ · sound &nbsp; B: เพลง · music &nbsp; S: ตั้งค่า · settings &nbsp; N: ซ่อนชื่อ/QR · names &amp; QR &nbsp; F: เต็มจอ · full screen &nbsp; Q: ออก · exit</div>
   <div class="show-tools">
     <a class="show-exit" id="showExit" href="/">← ออกไปที่อัลบั้ม · Exit to album</a>
     <button class="show-gear" id="showGear" type="button" aria-expanded="false" aria-controls="showPanel">⚙️ ตั้งค่า · Settings</button>
@@ -596,6 +631,19 @@
         <option value="none">ตัดทันที · None</option>
       </select>
     </label>
+    <div class="opt-row opt-col">
+      <label for="optMusic">🎵 เพลงจาก YouTube · Music from YouTube</label>
+      <input type="url" id="optMusic" placeholder="วางลิงก์เพลงหรือเพลย์ลิสต์ · Paste a song or playlist link" autocomplete="off" spellcheck="false">
+      <div class="music-ctl">
+        <button type="button" class="music-btn" id="musicToggle"></button>
+        <label class="music-vol" for="optMusicVol">🔈<input type="range" id="optMusicVol" min="0" max="100" step="5" aria-label="ระดับเสียงเพลง · Music volume">🔊</label>
+      </div>
+      <small id="musicStatus" aria-live="polite"></small>
+      <div class="music-recent" id="musicRecent" hidden>
+        <small>ล่าสุด · Recent</small>
+        <ul id="musicHistory"></ul>
+      </div>
+    </div>
     <button class="show-panel-close" id="showPanelClose" type="button">เสร็จ · Done</button>
   </div>
   <button class="show-fs" id="showFs" type="button">⛶ เต็มจอ · Full screen</button>
@@ -1252,17 +1300,21 @@
   // Options from the ⚙️ panel. Saved on this laptop; a link can also set them,
   // e.g. /?page=show&time=10&video=0 (handy as a bookmark on the projector laptop).
   const TRANSITIONS = ['fade', 'slide', 'zoom', 'none'];
-  const opts = { video: true, time: 7, trans: 'fade' };
+  const opts = { video: true, time: 7, trans: 'fade', music: '', musicOn: true, musicVol: 60 };
   try { Object.assign(opts, JSON.parse(localStorage.getItem('showOpts') || '{}')); } catch (_) {}
   {
     const q = new URLSearchParams(location.search);
     if (q.has('video')) opts.video = !/^(0|off|false|no)$/i.test(q.get('video'));
     if (q.has('time')) opts.time = Number(q.get('time'));
     if (q.has('transition')) opts.trans = String(q.get('transition')).toLowerCase();
+    if (q.has('music')) { opts.music = q.get('music'); opts.musicOn = true; }
   }
   opts.video = opts.video !== false;
   opts.time = Math.min(30, Math.max(3, Math.round(Number(opts.time)) || 7));
   if (!TRANSITIONS.includes(opts.trans)) opts.trans = 'fade';
+  opts.music = String(opts.music || '').trim().slice(0, 500);
+  opts.musicOn = opts.musicOn !== false;
+  opts.musicVol = Math.min(100, Math.max(0, Math.round(Number(opts.musicVol)))) || (opts.musicVol === 0 ? 0 : 60);
   const slideMs = () => opts.time * 1000;
   const ss = {
     all: new Map(),   // id -> item, as last returned by the server
@@ -1287,6 +1339,7 @@
     }
     drawQr();
     keepAwake();
+    setupMusic();
     idleCursor();
     pollShow(true);
   }
@@ -1413,6 +1466,7 @@
     }
     if (src) playVideo(next.querySelector('video'), src);
     else schedule();
+    updateDuck();
   }
 
   /* ---------- videos in the slideshow ---------- */
@@ -1469,6 +1523,7 @@
     ss.sound = !ss.sound;
     const v = currentVideo();
     if (v) v.muted = !ss.sound;
+    updateDuck();
     toast(ss.sound ? '🔊 เปิดเสียงวิดีโอ · Video sound on' : '🔇 ปิดเสียงวิดีโอ · Video sound off');
   }
 
@@ -1525,6 +1580,7 @@
     else if (k === 'n') showEl.classList.toggle('bare');
     else if (k === 'm') toggleSound();
     else if (k === 's') togglePanel();
+    else if (k === 'b') toggleMusic();
     else if (k === 'f') fullScreen();
     else if (k === 'q') exitShow();
   });
@@ -1559,6 +1615,7 @@
     optTime.value = opts.time;
     optTrans.value = opts.trans;
     showEl.dataset.trans = opts.trans;
+    drawMusic();
     $('optTimeOut').textContent = opts.time + ' วินาที · ' + opts.time + ' s';
   }
   function togglePanel(open) {
@@ -1598,6 +1655,232 @@
     saveOpts();
   });
   drawOpts();
+
+  /* ---------- 🎵 background music from a YouTube link ---------- */
+  // A hidden YouTube player (the official embed) plays a song on repeat or a
+  // playlist behind the slideshow. Browsers only allow sound after someone
+  // clicks or presses a key, so if it's blocked, the first click starts it.
+  // When a slideshow video plays with its sound on, the music goes quieter.
+  const music = { player: null, ready: false, src: null, key: '', loopSet: false, ducked: false, errors: 0 };
+
+  // Song or playlist from any normal YouTube link: watch?v=, youtu.be/, shorts/, embed/, playlist?list=.
+  function parseYouTube(url) {
+    let u;
+    try { u = new URL(String(url || '').trim()); } catch (_) { return null; }
+    if (!/(^|\.)(youtube\.com|youtu\.be|youtube-nocookie\.com)$/i.test(u.hostname)) return null;
+    let id = u.searchParams.get('v');
+    if (!id && /(^|\.)youtu\.be$/i.test(u.hostname)) id = u.pathname.slice(1).split('/')[0];
+    if (!id) { const m = /^\/(?:embed|shorts|live)\/([\w-]{11})/.exec(u.pathname); if (m) id = m[1]; }
+    if (!(id && /^[\w-]{11}$/.test(id))) id = null;
+    let list = u.searchParams.get('list');
+    // Auto-generated mixes (RD…) can't be loaded as a playlist: play the song itself then.
+    if (!(list && /^[\w-]{10,64}$/.test(list)) || /^RD/.test(list)) list = null;
+    return id || list ? { id, list } : null;
+  }
+
+  function musicStatus(text, err) {
+    const el = $('musicStatus');
+    el.textContent = text || '';
+    el.classList.toggle('err', !!err);
+  }
+  function drawMusic() {
+    if (document.activeElement !== $('optMusic')) $('optMusic').value = opts.music;
+    $('optMusicVol').value = opts.musicVol;
+    $('musicToggle').textContent = opts.musicOn ? '⏸ หยุดเพลง · Stop' : '▶ เล่นเพลง · Play';
+    drawMusicHistory();
+  }
+
+  // Recent links that actually played, saved in this browser only (newest first, up to 8).
+  // (Plain functions, not consts: the ⚙️ panel draws this list before this part of the script runs.)
+  function musicKeyOf(src) { return src ? (src.list || '') + '|' + (src.id || '') : ''; }
+  function readMusicHistory() {
+    try {
+      const h = JSON.parse(localStorage.getItem('musicHistory') || '[]');
+      return Array.isArray(h) ? h.filter(e => e && typeof e.url === 'string' && parseYouTube(e.url)) : [];
+    } catch (_) { return []; }
+  }
+  function writeMusicHistory(h) {
+    try { localStorage.setItem('musicHistory', JSON.stringify(h.slice(0, 8))); } catch (_) {}
+  }
+  function rememberMusic(url, title) {
+    const key = musicKeyOf(parseYouTube(url));
+    if (!key) return;
+    const h = readMusicHistory();
+    const old = h.find(e => musicKeyOf(parseYouTube(e.url)) === key);
+    const entry = { url, title: title || (old && old.title) || '', t: Date.now() };
+    writeMusicHistory([entry].concat(h.filter(e => e !== old)));
+    drawMusicHistory();
+  }
+  function drawMusicHistory() {
+    const h = readMusicHistory();
+    const list = $('musicHistory');
+    $('musicRecent').hidden = !h.length;
+    list.innerHTML = '';
+    const nowKey = opts.music ? musicKeyOf(parseYouTube(opts.music)) : '';
+    h.forEach(e => {
+      const src = parseYouTube(e.url);
+      const li = document.createElement('li');
+      const use = document.createElement('button');
+      use.type = 'button';
+      use.className = 'use' + (musicKeyOf(src) === nowKey ? ' on' : '');
+      use.textContent = (src.list ? '📃 ' : '🎵 ') + (e.title || e.url);
+      use.title = e.url;
+      use.onclick = () => {
+        opts.music = e.url;
+        opts.musicOn = true;
+        saveOpts();
+        setupMusic();
+      };
+      const rm = document.createElement('button');
+      rm.type = 'button';
+      rm.className = 'rm-link';
+      rm.textContent = '✕';
+      rm.setAttribute('aria-label', 'ลบออกจากรายการ · Remove ' + (e.title || e.url));
+      rm.onclick = () => { writeMusicHistory(readMusicHistory().filter(x => x.url !== e.url)); drawMusicHistory(); };
+      li.append(use, rm);
+      list.appendChild(li);
+    });
+  }
+  const musicVolume = () => music.ducked ? Math.round(opts.musicVol / 4) : opts.musicVol;
+
+  let ytWaiting = [];
+  function loadYouTubeApi(cb) {
+    if (window.YT && window.YT.Player) return cb();
+    ytWaiting.push(cb);
+    if (ytWaiting.length > 1) return; // already loading
+    window.onYouTubeIframeAPIReady = () => { const w = ytWaiting; ytWaiting = []; w.forEach(f => f()); };
+    const s = document.createElement('script');
+    s.src = 'https://www.youtube.com/iframe_api';
+    s.onerror = () => { ytWaiting = []; musicStatus('โหลด YouTube ไม่ได้ · Could not load YouTube (check the internet)', true); };
+    document.head.appendChild(s);
+  }
+
+  // (Re)start from the saved link and on/off state.
+  function setupMusic() {
+    drawMusic();
+    music.src = opts.music ? parseYouTube(opts.music) : null;
+    if (!opts.music) { stopMusic(); musicStatus(''); return; }
+    if (!music.src) { stopMusic(); musicStatus('ลิงก์นี้ไม่ใช่เพลงจาก YouTube · Not a YouTube song or playlist link', true); return; }
+    if (!opts.musicOn) { stopMusic(); musicStatus('ปิดเพลงอยู่ · Music off'); return; }
+    musicStatus('กำลังโหลดเพลง… · Loading music…');
+    loadYouTubeApi(() => {
+      if (music.player) { if (music.ready) startMusic(); return; }
+      const holder = document.createElement('div');
+      holder.className = 'yt-holder';
+      holder.setAttribute('aria-hidden', 'true');
+      const target = document.createElement('div');
+      holder.appendChild(target);
+      showEl.prepend(holder);
+      music.player = new YT.Player(target, {
+        width: 200, height: 200,
+        playerVars: { controls: 0, disablekb: 1, playsinline: 1, rel: 0, origin: location.origin },
+        events: {
+          onReady: () => { music.ready = true; startMusic(); },
+          onStateChange: onMusicState,
+          onError: onMusicError,
+        },
+      });
+    });
+  }
+  function startMusic() {
+    const p = music.player, src = music.src;
+    if (!p || !music.ready || !src || !opts.musicOn) return;
+    p.setVolume(musicVolume());
+    const key = (src.list || '') + '|' + (src.id || '');
+    if (key === music.key && p.getPlayerState() !== YT.PlayerState.UNSTARTED) {
+      p.playVideo(); // same link, just paused: carry on where it was
+    } else {
+      music.key = key;
+      music.loopSet = false;
+      music.errors = 0;
+      if (src.list) p.loadPlaylist({ list: src.list, listType: 'playlist', index: 0 });
+      else p.loadVideoById(src.id);
+    }
+    setTimeout(checkMusicBlocked, 2500);
+  }
+  function stopMusic() {
+    if (music.player && music.ready) music.player.pauseVideo();
+    $('musicHint').hidden = true;
+  }
+  // Still not playing with sound a moment after starting = the browser blocked it until a click.
+  function checkMusicBlocked() {
+    const p = music.player;
+    if (!p || !music.ready || !opts.musicOn || !music.src) return;
+    const st = p.getPlayerState();
+    const playing = (st === YT.PlayerState.PLAYING || st === YT.PlayerState.BUFFERING) && !p.isMuted();
+    $('musicHint').hidden = playing;
+  }
+  // Any click or key on the slideshow counts as permission to play sound.
+  ['pointerdown', 'keydown'].forEach(ev => document.addEventListener(ev, () => {
+    if (document.body.dataset.view !== 'show' || $('musicHint').hidden) return;
+    const p = music.player;
+    if (!p || !music.ready || !opts.musicOn) return;
+    p.unMute();
+    p.playVideo();
+    setTimeout(checkMusicBlocked, 1200);
+  }, true));
+
+  function onMusicState(e) {
+    const p = music.player, S = YT.PlayerState;
+    if (e.data === S.PLAYING) {
+      music.errors = 0;
+      if (!p.isMuted()) $('musicHint').hidden = true;
+      if (music.src && music.src.list && !music.loopSet) { p.setLoop(true); music.loopSet = true; }
+      const d = p.getVideoData && p.getVideoData();
+      musicStatus('🎵 ' + (d && d.title ? d.title : 'กำลังเล่น · Playing'));
+      if (music.saved !== music.key) {
+        music.saved = music.key;
+        const title = d && d.title ? (music.src.list ? 'เพลย์ลิสต์ · Playlist · ' + d.title : d.title) : '';
+        rememberMusic(opts.music, title);
+      }
+    } else if (e.data === S.ENDED && music.src && !music.src.list && opts.musicOn) {
+      p.seekTo(0, true); // one song: play it again
+      p.playVideo();
+    }
+  }
+  function onMusicError(e) {
+    // 101/150: the owner doesn't allow it outside YouTube. 100: removed or private. 2/5: bad link.
+    const msg = e.data === 101 || e.data === 150 ? 'เพลงนี้ไม่อนุญาตให้เล่นนอก YouTube · This song can’t play outside YouTube'
+      : e.data === 100 ? 'ไม่พบวิดีโอ (ถูกลบหรือเป็นส่วนตัว) · Video removed or private'
+      : 'เล่นลิงก์นี้ไม่ได้ · Could not play this link';
+    if (music.src && music.src.list && ++music.errors < 5) {
+      musicStatus(msg + ' · ข้ามไปเพลงถัดไป · skipping', true);
+      music.player.nextVideo();
+      return;
+    }
+    musicStatus(msg + ' · ลองลิงก์อื่น · try another link', true);
+    $('musicHint').hidden = true;
+  }
+
+  function toggleMusic() {
+    if (!opts.music) { togglePanel(true); $('optMusic').focus(); return; }
+    opts.musicOn = !opts.musicOn;
+    saveOpts();
+    setupMusic();
+    toast(opts.musicOn ? '🎵 เปิดเพลง · Music on' : '🔇 ปิดเพลง · Music off');
+  }
+  // Quieter music while a slideshow video plays with its own sound.
+  function updateDuck() {
+    const v = currentVideo();
+    const duck = !!(v && !v.muted);
+    if (duck === music.ducked) return;
+    music.ducked = duck;
+    if (music.player && music.ready) music.player.setVolume(musicVolume());
+  }
+
+  $('musicToggle').onclick = toggleMusic;
+  $('optMusic').addEventListener('change', () => {
+    opts.music = $('optMusic').value.trim().slice(0, 500);
+    opts.musicOn = true;
+    saveOpts();
+    setupMusic();
+  });
+  $('optMusic').addEventListener('keydown', (e) => { if (e.key === 'Enter') $('optMusic').blur(); });
+  $('optMusicVol').addEventListener('input', () => {
+    opts.musicVol = Number($('optMusicVol').value);
+    saveOpts();
+    if (music.player && music.ready) music.player.setVolume(musicVolume());
+  });
 
   // Ask the browser not to dim or sleep the screen (Chrome, Edge, Safari 16.4+).
   async function keepAwake() {
