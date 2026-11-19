@@ -655,7 +655,7 @@
     <label class="opt-row opt-col" for="optTime">
       <span>เวลาต่อรูป · Slide time: <b id="optTimeOut"></b></span>
       <input type="range" id="optTime" min="3" max="30" step="1">
-      <small>วิดีโอเล่นจนจบ (ไม่เกิน 20 วินาที) · Videos play to the end, up to 20 s</small>
+      <small>วิดีโอเล่นจนจบ (ไม่เกิน 1 นาที) · Videos play to the end, up to 1 minute</small>
     </label>
     <label class="opt-row opt-col" for="optTrans">
       <span>การเปลี่ยนภาพ · Transition</span>
@@ -1518,10 +1518,10 @@
   }
 
   /* ---------- videos in the slideshow ---------- */
-  // Muted (browsers only autoplay muted video; M turns sound on), up to 20 s each.
+  // Muted (browsers only autoplay muted video; M turns sound on), up to 1 minute each.
   // If a video can't play here (too big without an API key, or a format this
   // browser can't decode, e.g. HEVC on some PCs), its still picture stays up.
-  const VIDEO_MAX_MS = 20000;
+  const VIDEO_MAX_MS = 60000; // 1 minute
   function videoUrl(it) {
     if (it.mock) return null;
     const id = encodeURIComponent(it.id);
