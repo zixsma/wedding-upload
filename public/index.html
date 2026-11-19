@@ -331,6 +331,12 @@
     filter: drop-shadow(0 14px 40px rgba(0, 0, 0, .55));
   }
   .show-layer.on img { animation: kenburns 9s ease-out forwards; }
+  .show-layer video {
+    position: absolute; left: 4vw; top: 9vh; width: 92vw; height: 76vh; object-fit: contain;
+    opacity: 0; transition: opacity .6s; background: transparent;
+  }
+  .show-layer video.on { opacity: 1; }
+  .show-layer.is-video img { animation: none; }
   @keyframes kenburns { from { transform: scale(1); } to { transform: scale(1.06); } }
   .show-title {
     position: absolute; top: 2.2vh; left: 3vw; z-index: 2; font-family: 'Gochi Hand', cursive;
@@ -526,7 +532,7 @@
     <p class="small">สแกน QR ด้านล่างเพื่อส่งรูป · Scan the QR code to share yours</p>
   </div>
   <div class="show-paused" id="showPaused" hidden>❚❚ หยุดชั่วคราว · Paused</div>
-  <div class="show-help">Space: หยุด/เล่น · pause &nbsp; ← →: ก่อนหน้า/ถัดไป · prev/next &nbsp; N: ซ่อนชื่อ/QR · names &amp; QR &nbsp; F: เต็มจอ · full screen &nbsp; Q: ออก · exit</div>
+  <div class="show-help">Space: หยุด/เล่น · pause &nbsp; ← →: ก่อนหน้า/ถัดไป · prev/next &nbsp; M: เสียงวิดีโอ · sound &nbsp; N: ซ่อนชื่อ/QR · names &amp; QR &nbsp; F: เต็มจอ · full screen &nbsp; Q: ออก · exit</div>
   <a class="show-exit" id="showExit" href="/">← ออกไปที่อัลบั้ม · Exit to album</a>
   <button class="show-fs" id="showFs" type="button">⛶ เต็มจอ · Full screen</button>
 </div>
@@ -1196,7 +1202,7 @@
     for (let i = 0; i < 2; i++) {
       const layer = document.createElement('div');
       layer.className = 'show-layer';
-      layer.innerHTML = '<div class="bg"></div><img alt="">';
+      layer.innerHTML = '<div class="bg"></div><img alt=""><video muted playsinline preload="auto"></video>';
       showEl.prepend(layer);
       ss.layers.push(layer);
     }
@@ -1209,6 +1215,7 @@
   async function pollShow(first) {
     try {
       const res = await server('listShow', {});
+      ss.apiKey = res.apiKey || null;
       const ids = new Set(res.items.map(it => it.id));
       const added = res.items.filter(it => !ss.all.has(it.id)); // newest first
       ss.all = new Map(res.items.map(it => [it.id, it]));
@@ -1290,12 +1297,17 @@
   function paint(entry, url) {
     const it = entry.it;
     const next = ss.layers[1 - ss.cur], prev = ss.layers[ss.cur];
+    const src = it.video ? videoUrl(it) : null;
+    stopVideo(next.querySelector('video'));
     next.querySelector('.bg').style.backgroundImage = 'url("' + url + '")';
     next.querySelector('img').src = url;
+    next.classList.toggle('is-video', !!src);
     next.classList.remove('on');
     void next.offsetWidth; // restart the slow zoom
     next.classList.add('on');
     prev.classList.remove('on');
+    const prevVideo = prev.querySelector('video');
+    setTimeout(() => { if (!prev.classList.contains('on')) stopVideo(prevVideo); }, 1500); // after the crossfade
     ss.cur = 1 - ss.cur;
     ss.current = entry;
     ss.history.push(entry);
@@ -1317,7 +1329,65 @@
       entry.announce = false;
       toast(it.by ? `✨ รูปใหม่จาก ${it.by} · New photo from ${it.by}` : '✨ รูปใหม่ · New photo!');
     }
-    schedule();
+    if (src) playVideo(next.querySelector('video'), src);
+    else schedule();
+  }
+
+  /* ---------- videos in the slideshow ---------- */
+  // Muted (browsers only autoplay muted video; M turns sound on), up to 20 s each.
+  // If a video can't play here (too big without an API key, or a format this
+  // browser can't decode, e.g. HEVC on some PCs), its still picture stays up.
+  const VIDEO_MAX_MS = 20000;
+  function videoUrl(it) {
+    if (it.mock) return null;
+    const id = encodeURIComponent(it.id);
+    if (ss.apiKey) return 'https://www.googleapis.com/drive/v3/files/' + id + '?alt=media&key=' + encodeURIComponent(ss.apiKey);
+    // Without a key Google serves files up to ~100 MB directly; bigger ones get a virus-scan page.
+    if (it.size && it.size < 95e6) return 'https://drive.usercontent.google.com/download?id=' + id + '&export=download';
+    return null;
+  }
+  function stopVideo(v) {
+    if (!v) return;
+    v.onplaying = v.onended = v.onerror = null;
+    v.pause();
+    v.classList.remove('on');
+    if (v.getAttribute('src')) { v.removeAttribute('src'); v.load(); } // stops the download too
+  }
+  function playVideo(v, src) {
+    const mine = loadSeq;
+    let started = false;
+    v.muted = !ss.sound;
+    v.src = src;
+    v.onplaying = () => {
+      if (mine !== loadSeq) return;
+      // Plays sound but no picture = video format this browser can't show: keep the still.
+      if (!v.videoWidth) { stopVideo(v); if (!started) schedule(); return; }
+      v.classList.add('on');
+      if (started) return;
+      started = true;
+      videoTimer(v);
+    };
+    v.onended = () => { if (mine === loadSeq && !ss.paused) step(1); };
+    v.onerror = () => { if (mine === loadSeq && !started) { stopVideo(v); schedule(); } };
+    // Nothing after 8 s (slow connection, huge file): show the next one instead.
+    clearTimeout(ss.timer);
+    ss.timer = setTimeout(() => { if (!started && mine === loadSeq && !ss.paused) { stopVideo(v); step(1); } }, 8000);
+    if (!ss.paused) v.play().catch(() => {});
+  }
+  // Move on when the video ends or after VIDEO_MAX_MS of playing, whichever comes first.
+  function videoTimer(v) {
+    clearTimeout(ss.timer);
+    ss.timer = ss.paused ? 0 : setTimeout(() => step(1), Math.max(2000, VIDEO_MAX_MS - v.currentTime * 1000));
+  }
+  function currentVideo() {
+    const v = ss.layers[ss.cur] && ss.layers[ss.cur].querySelector('video');
+    return v && v.getAttribute('src') ? v : null;
+  }
+  function toggleSound() {
+    ss.sound = !ss.sound;
+    const v = currentVideo();
+    if (v) v.muted = !ss.sound;
+    toast(ss.sound ? '🔊 เปิดเสียงวิดีโอ · Video sound on' : '🔇 ปิดเสียงวิดีโอ · Video sound off');
   }
 
   function ago(t) {
@@ -1342,8 +1412,15 @@
   function togglePause() {
     ss.paused = !ss.paused;
     $('showPaused').hidden = !ss.paused;
-    if (ss.paused) { clearTimeout(ss.timer); ss.timer = 0; }
-    else if (ss.current) schedule();
+    const v = currentVideo();
+    if (ss.paused) {
+      clearTimeout(ss.timer); ss.timer = 0;
+      if (v) v.pause();
+    } else if (v) {
+      v.play().catch(() => {});
+      // Already playing: carry on its timer. Not started yet: still-picture timer until it does.
+      if (v.classList.contains('on')) videoTimer(v); else schedule();
+    } else if (ss.current) schedule();
     else step(1);
   }
 
@@ -1362,6 +1439,7 @@
     else if (k === 'arrowright') step(1);
     else if (k === 'arrowleft') step(-1);
     else if (k === 'n') showEl.classList.toggle('bare');
+    else if (k === 'm') toggleSound();
     else if (k === 'f') fullScreen();
     else if (k === 'q') exitShow();
   });

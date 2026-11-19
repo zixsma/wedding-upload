@@ -126,16 +126,22 @@ export async function listShow() {
   const hit = cache.get('show');
   if (hit) return hit;
   const delayMin = showDelayMinutes();
-  const data = await driveList(baseQuery(), 'files(id,mimeType,createdTime,description,appProperties)', 1000, '');
+  const data = await driveList(baseQuery(), 'files(id,mimeType,size,createdTime,description,appProperties)', 1000, '');
   const cutoff = Date.now() - delayMin * 60 * 1000;
   const items = [];
   (data.files || []).forEach(f => {
     const t = Date.parse(f.createdTime);
     if (!(t <= cutoff)) return;
     const who = whoUploaded(f);
-    items.push({ id: f.id, video: /^video\//.test(f.mimeType), by: who.name, byKey: who.key, t });
+    const video = /^video\//.test(f.mimeType);
+    const it = { id: f.id, video, by: who.name, byKey: who.key, t };
+    if (video) it.size = Number(f.size) || 0; // the page needs it to pick how to stream
+    items.push(it);
   });
-  const out = { items, delayMin };
+  // Optional browser API key (Drive API only, limited to this site). With it the
+  // screen can stream videos of any size straight from Google; without it,
+  // only videos under ~100 MB play (bigger ones show their still picture).
+  const out = { items, delayMin, apiKey: process.env.GOOGLE_API_KEY || null };
   cache.put('show', out, 20);
   return out;
 }
