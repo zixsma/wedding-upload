@@ -1,4 +1,4 @@
-// Web server: serves the page and the three small JSON calls it makes.
+// Web server: serves the page and the four small JSON calls it makes.
 // Photo/video bytes never come through here; the browser sends them straight to Google Drive.
 
 import http from 'node:http';
@@ -9,11 +9,11 @@ import path from 'node:path';
 
 try { process.loadEnvFile(); } catch { /* no .env file: settings come from the environment */ }
 
-const { startUpload, listMedia, listUploaders, PublicError } = await import('./drive.js');
+const { startUpload, listMedia, listUploaders, listShow, PublicError } = await import('./drive.js');
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const PORT = Number(process.env.PORT) || 8080;
-const API = { startUpload, listMedia, listUploaders };
+const API = { startUpload, listMedia, listUploaders, listShow };
 
 // Static files, loaded once at start.
 const STATIC = {

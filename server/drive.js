@@ -115,6 +115,38 @@ export async function listMedia(opts) {
 }
 
 /**
+ * Called by the slideshow (?page=show) on the reception screen.
+ * Returns { items: [{ id, video, by, byKey, t }], delayMin }, newest first (up to 1000).
+ * Uploads newer than SHOW_DELAY_MINUTES (default 5) are held back, so there is
+ * time to hide something (move it to the trash or a subfolder) before it is on
+ * the big screen. The album itself still shows everything straight away.
+ * No "fresh" option: the screen polls, so the 20 s cache always applies.
+ */
+export async function listShow() {
+  const hit = cache.get('show');
+  if (hit) return hit;
+  const delayMin = showDelayMinutes();
+  const data = await driveList(baseQuery(), 'files(id,mimeType,createdTime,description,appProperties)', 1000, '');
+  const cutoff = Date.now() - delayMin * 60 * 1000;
+  const items = [];
+  (data.files || []).forEach(f => {
+    const t = Date.parse(f.createdTime);
+    if (!(t <= cutoff)) return;
+    const who = whoUploaded(f);
+    items.push({ id: f.id, video: /^video\//.test(f.mimeType), by: who.name, byKey: who.key, t });
+  });
+  const out = { items, delayMin };
+  cache.put('show', out, 20);
+  return out;
+}
+
+function showDelayMinutes() {
+  const raw = process.env.SHOW_DELAY_MINUTES;
+  const n = raw === undefined || raw === '' ? 5 : Number(raw);
+  return Number.isFinite(n) && n >= 0 ? Math.min(n, 24 * 60) : 5;
+}
+
+/**
  * Called by the album page for the "filter by name" buttons.
  * Returns { total, people: [{ key, name, n }] } with the busiest uploaders first.
  * Guests who left the name empty are grouped under key '-'.

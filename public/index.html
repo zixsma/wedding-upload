@@ -264,6 +264,13 @@
     .grid { gap: 4px; margin: 0 6px; }
     .tile { border-radius: 9px; }
   }
+  .show-link {
+    display: inline-block; margin-top: 14px; font-size: 16px; color: var(--pink-deep); text-decoration: none;
+    border: 1.5px solid var(--pink-soft); border-radius: 999px; padding: 7px 16px; background: #fff;
+  }
+  .show-link:hover { border-color: var(--pink); background: var(--pink-wash); }
+  .show-link:focus-visible { outline: 3px solid var(--pink-soft); outline-offset: 2px; }
+
   /* ---------- wide screens: sidebar + bigger album ---------- */
   body[data-view="upload"] .album-intro { display: none; }
   /* Only in the wide layout; phones use the chips row + "More names" sheet. */
@@ -307,6 +314,87 @@
   @media (min-width: 1150px) {
     .grid { grid-template-columns: repeat(5, 1fr); }
   }
+  /* ---------- slideshow (?page=show) ---------- */
+  body[data-view="show"] { padding: 0; background: #1d0d13; overflow: hidden; }
+  body[data-view="show"] .card { display: none; }
+  .show { position: fixed; inset: 0; z-index: 40; background: #1d0d13; color: #fff; overflow: hidden; }
+  .show[hidden] { display: none; }
+  .show.idle { cursor: none; }
+  .show-layer { position: absolute; inset: 0; opacity: 0; transition: opacity 1.4s ease; }
+  .show-layer.on { opacity: 1; }
+  .show-layer .bg {
+    position: absolute; inset: -80px; background: center / cover no-repeat;
+    filter: blur(48px) brightness(.5) saturate(1.15);
+  }
+  .show-layer img {
+    position: absolute; left: 4vw; top: 9vh; width: 92vw; height: 76vh; object-fit: contain;
+    filter: drop-shadow(0 14px 40px rgba(0, 0, 0, .55));
+  }
+  .show-layer.on img { animation: kenburns 9s ease-out forwards; }
+  @keyframes kenburns { from { transform: scale(1); } to { transform: scale(1.06); } }
+  .show-title {
+    position: absolute; top: 2.2vh; left: 3vw; z-index: 2; font-family: 'Gochi Hand', cursive;
+    font-size: clamp(22px, 2.8vw, 46px); color: #fff; text-shadow: 0 2px 12px rgba(0, 0, 0, .5);
+  }
+  .show-title span { color: var(--pink); }
+  .show-who {
+    position: absolute; left: 3vw; bottom: 3.5vh; z-index: 2; max-width: 60vw;
+    font-size: clamp(20px, 2.4vw, 40px); line-height: 1.2; text-shadow: 0 2px 14px rgba(0, 0, 0, .7);
+  }
+  .show-who small { display: block; font-size: .55em; opacity: .85; margin-top: 4px; }
+  .show-who .vid { font-size: .55em; background: rgba(255, 255, 255, .2); border-radius: 999px; padding: 2px 10px; margin-left: 10px; vertical-align: middle; }
+  .show-qr {
+    position: absolute; right: 2.5vw; bottom: 3vh; z-index: 2; display: flex; gap: 14px; align-items: center;
+    background: #fff; color: var(--ink); border-radius: 18px; padding: 12px 18px 12px 12px;
+    box-shadow: 0 8px 30px rgba(0, 0, 0, .35);
+  }
+  .show-qr-code { width: clamp(96px, 9vw, 170px); aspect-ratio: 1; }
+  .show-qr-code svg { width: 100%; height: 100%; display: block; }
+  .show-qr-code:empty { display: none; }
+  .show-qr-text { font-size: clamp(14px, 1.3vw, 22px); line-height: 1.3; }
+  .show-qr-text b { display: block; color: var(--pink-deep); font-weight: 400; font-size: 1.2em; }
+  .show-qr-text span { display: block; }
+  .show-qr-text small { display: block; color: var(--ink-soft); font-size: .75em; margin-top: 4px; }
+  .show.bare .show-who, .show.bare .show-qr, .show.bare .show-title { display: none; }
+  .show-toast {
+    position: absolute; top: 2.5vh; left: 50%; z-index: 3; transform: translate(-50%, -20px);
+    background: var(--pink); color: #fff; border-radius: 999px; padding: 10px 24px;
+    font-size: clamp(16px, 1.6vw, 28px); opacity: 0; transition: opacity .5s, transform .5s;
+    box-shadow: 0 6px 24px rgba(0, 0, 0, .35); white-space: nowrap;
+  }
+  .show-toast.on { opacity: 1; transform: translate(-50%, 0); }
+  .show-empty { position: absolute; inset: 0; display: grid; place-content: center; text-align: center; font-size: clamp(20px, 2.4vw, 40px); }
+  .show-empty[hidden] { display: none; }
+  .show-empty .big { font-size: 3em; }
+  .show-empty p { margin: 8px 0; }
+  .show-empty .small { font-size: .6em; opacity: .8; }
+  .show-paused {
+    position: absolute; top: 2.5vh; right: 3vw; z-index: 3; background: rgba(0, 0, 0, .5);
+    border-radius: 999px; padding: 6px 16px; font-size: clamp(14px, 1.2vw, 20px);
+  }
+  .show-paused[hidden] { display: none; }
+  .show-help {
+    position: absolute; left: 50%; bottom: .8vh; transform: translateX(-50%); z-index: 3;
+    font-size: 13px; opacity: .7; white-space: nowrap; transition: opacity .4s;
+  }
+  .show-fs {
+    position: absolute; top: 2.5vh; right: 3vw; z-index: 3; font: inherit; font-size: 16px; cursor: pointer;
+    color: #fff; background: rgba(255, 255, 255, .16); border: 1px solid rgba(255, 255, 255, .35);
+    border-radius: 999px; padding: 8px 16px; transition: opacity .4s;
+  }
+  .show-exit {
+    position: absolute; top: calc(2.2vh + clamp(34px, 4vw, 64px)); left: 3vw; z-index: 3; font-size: 16px;
+    color: #fff; text-decoration: none; background: rgba(0, 0, 0, .45); border: 1px solid rgba(255, 255, 255, .35);
+    border-radius: 999px; padding: 8px 16px; transition: opacity .4s;
+  }
+  .show-exit:hover { background: rgba(0, 0, 0, .65); }
+  .show.idle .show-help, .show.idle .show-fs, .show.full .show-fs,
+  .show.idle .show-exit { opacity: 0; pointer-events: none; }
+  .show:not([hidden]) .show-paused:not([hidden]) ~ .show-fs { top: calc(2.5vh + 44px); }
+  @media (prefers-reduced-motion: reduce) {
+    .show-layer.on img { animation: none; }
+  }
+
   @media (prefers-reduced-motion: reduce) {
     .thanks .big, .tile.sk { animation: none; }
     .tile img { transition: none; }
@@ -345,6 +433,7 @@
         <p class="lede">อัลบั้มความประทับใจจากแขกทุกคน 💕</p>
         <p class="lede-en">Photos &amp; videos shared by our guests</p>
         <button class="btn two" id="goUpload"><span>📸 ส่งรูป / วิดีโอของคุณ</span><small>Share your photos &amp; videos</small></button>
+        <a class="show-link" id="goShow" href="/?page=show">🎞️ ดูแบบสไลด์โชว์ · Slideshow</a>
         <!-- Wide screens: every name, with search, instead of the chips row + sheet. -->
         <nav class="side-names" id="sideNames" aria-label="Filter by name" hidden>
           <p class="side-title">ดูรูปของ · Filter by name</p>
@@ -422,6 +511,26 @@
   </div>
 </main>
 
+<!-- Slideshow for the reception screen: open /?page=show on the projector laptop. -->
+<div class="show" id="show" hidden>
+  <div class="show-title">Ruengrin <span>♥</span> Tanakrit</div>
+  <div class="show-toast" id="showToast" aria-live="polite"></div>
+  <div class="show-who" id="showWho"></div>
+  <div class="show-qr">
+    <div class="show-qr-code" id="qrBox" aria-hidden="true"></div>
+    <div class="show-qr-text"><b>ส่งรูปของคุณ</b><span>Share your photos</span><small id="qrUrl"></small></div>
+  </div>
+  <div class="show-empty" id="showEmpty" hidden>
+    <div class="big">📸</div>
+    <p>รอรูปแรกจากแขกอยู่นะ · Waiting for the first photo</p>
+    <p class="small">สแกน QR ด้านล่างเพื่อส่งรูป · Scan the QR code to share yours</p>
+  </div>
+  <div class="show-paused" id="showPaused" hidden>❚❚ หยุดชั่วคราว · Paused</div>
+  <div class="show-help">Space: หยุด/เล่น · pause &nbsp; ← →: ก่อนหน้า/ถัดไป · prev/next &nbsp; N: ซ่อนชื่อ/QR · names &amp; QR &nbsp; F: เต็มจอ · full screen &nbsp; Q: ออก · exit</div>
+  <a class="show-exit" id="showExit" href="/">← ออกไปที่อัลบั้ม · Exit to album</a>
+  <button class="show-fs" id="showFs" type="button">⛶ เต็มจอ · Full screen</button>
+</div>
+
 <!-- Full-screen viewer -->
 <div class="lb" id="lb" hidden role="dialog" aria-modal="true" aria-label="Photo viewer">
   <button class="lb-close" id="lbClose" aria-label="Close">×</button>
@@ -455,7 +564,16 @@
       });
       const list = Object.values(people).sort((x, y) => (x.key === '-') - (y.key === '-') || y.n - x.n);
       return { total: mockData().length, people: list };
-    }
+    },
+    // Each call after the first adds one "new" upload, to try the slideshow's banner.
+    listShow: () => {
+      const now = Date.now();
+      if (MOCK.showCalls++) MOCK.showNew.unshift({ ...mockData()[MOCK.showNew.length % 2], id: 'new' + MOCK.showCalls, by: 'Pun', byKey: 'pun', t: now });
+      const old = mockData().map((it, i) => ({ ...it, t: now - (i + 1) * 7 * 60000 }));
+      return { items: MOCK.showNew.concat(old), delayMin: 0 };
+    },
+    showCalls: 0,
+    showNew: [],
   };
   let MOCKDATA = null;
   function mockData() {
@@ -1057,9 +1175,250 @@
   if (window.ResizeObserver) new ResizeObserver(drawFrame).observe(card);
   else window.addEventListener('resize', drawFrame);
 
+  /* ================= slideshow (?page=show) ================= */
+  // For the projector at the reception. New uploads jump the queue (with a
+  // banner); otherwise it shuffles through everything, so early photos come back.
+  const SHOW_MS = 7000, POLL_MS = 25000;
+  const ss = {
+    all: new Map(),   // id -> item, as last returned by the server
+    fresh: [],        // new uploads waiting to be shown first: { it, announce }
+    deck: [],         // shuffled items still to show this round
+    history: [],      // shown entries, for ←
+    forward: [],      // entries skipped back over, for →
+    timer: 0, paused: false, layers: [], cur: 0, current: null,
+  };
+  const showEl = $('show');
+
+  function startShow() {
+    show('show');
+    showEl.hidden = false;
+    document.title = 'Slideshow · Ruengrin ♥ Tanakrit';
+    for (let i = 0; i < 2; i++) {
+      const layer = document.createElement('div');
+      layer.className = 'show-layer';
+      layer.innerHTML = '<div class="bg"></div><img alt="">';
+      showEl.prepend(layer);
+      ss.layers.push(layer);
+    }
+    drawQr();
+    keepAwake();
+    idleCursor();
+    pollShow(true);
+  }
+
+  async function pollShow(first) {
+    try {
+      const res = await server('listShow', {});
+      const ids = new Set(res.items.map(it => it.id));
+      const added = res.items.filter(it => !ss.all.has(it.id)); // newest first
+      ss.all = new Map(res.items.map(it => [it.id, it]));
+      if (first) {
+        if (res.items.length) ss.fresh.push({ it: res.items[0] }); // open on the newest photo
+      } else {
+        added.reverse().forEach(it => ss.fresh.push({ it, announce: true }));
+      }
+      // Hidden or deleted in Drive: drop it everywhere, and skip it if it is on screen now.
+      const keep = (e) => ids.has((e.it || e).id);
+      ss.fresh = ss.fresh.filter(keep);
+      ss.deck = ss.deck.filter(keep);
+      ss.history = ss.history.filter(keep);
+      ss.forward = ss.forward.filter(keep);
+      $('showEmpty').hidden = ss.all.size > 0;
+      if (ss.current && !ids.has(ss.current.it.id)) step(1);
+      else if (!ss.timer && !ss.paused && ss.all.size) step(1);
+    } catch (e) { /* keep showing what we have; try again next time */ }
+    setTimeout(() => pollShow(false), POLL_MS);
+  }
+
+  function pickNext() {
+    while (ss.fresh.length) {
+      const e = ss.fresh.shift();
+      if (ss.all.has(e.it.id)) return e;
+    }
+    if (!ss.deck.length) {
+      ss.deck = shuffle([...ss.all.values()]);
+      // Don't show the same photo twice in a row across rounds.
+      if (ss.deck.length > 1 && ss.current && ss.deck[0].id === ss.current.it.id) ss.deck.push(ss.deck.shift());
+    }
+    const it = ss.deck.shift();
+    return it ? { it } : null;
+  }
+  function shuffle(a) {
+    for (let i = a.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [a[i], a[j]] = [a[j], a[i]];
+    }
+    return a;
+  }
+
+  function step(dir) {
+    clearTimeout(ss.timer);
+    ss.timer = 0;
+    let entry;
+    if (dir < 0) {
+      if (ss.history.length < 2) return schedule();
+      ss.forward.push(ss.history.pop());
+      entry = ss.history.pop();
+    } else {
+      entry = ss.forward.pop() || pickNext();
+    }
+    if (!entry) return; // nothing to show yet; the next poll starts it
+    load(entry);
+  }
+  function schedule() {
+    clearTimeout(ss.timer);
+    ss.timer = ss.paused ? 0 : setTimeout(() => step(1), SHOW_MS);
+  }
+
+  let fails = 0, loadSeq = 0;
+  function load(entry) {
+    const url = thumb(entry.it, 1920);
+    const pre = new Image();
+    const mine = ++loadSeq; // quick ← → presses: only the last one wins
+    // Placeholder timer so a poll doesn't start a second slideshow while this loads.
+    ss.timer = setTimeout(() => {}, SHOW_MS);
+    pre.onload = () => { if (mine !== loadSeq) return; fails = 0; paint(entry, url); };
+    pre.onerror = () => {
+      if (mine !== loadSeq) return;
+      // e.g. a video Google is still processing: skip it for now.
+      ss.timer = setTimeout(() => step(1), ++fails > 5 ? 10000 : 300);
+      if (fails > 5) fails = 0;
+    };
+    pre.src = url;
+  }
+
+  function paint(entry, url) {
+    const it = entry.it;
+    const next = ss.layers[1 - ss.cur], prev = ss.layers[ss.cur];
+    next.querySelector('.bg').style.backgroundImage = 'url("' + url + '")';
+    next.querySelector('img').src = url;
+    next.classList.remove('on');
+    void next.offsetWidth; // restart the slow zoom
+    next.classList.add('on');
+    prev.classList.remove('on');
+    ss.cur = 1 - ss.cur;
+    ss.current = entry;
+    ss.history.push(entry);
+    if (ss.history.length > 60) ss.history.shift();
+
+    const who = $('showWho');
+    who.textContent = '📷 ' + (it.by || 'แขกรับเชิญ · A guest');
+    if (it.video) {
+      const v = document.createElement('span');
+      v.className = 'vid';
+      v.textContent = '🎬 วิดีโอ · video';
+      who.appendChild(v);
+    }
+    const when = document.createElement('small');
+    when.textContent = ago(it.t);
+    who.appendChild(when);
+
+    if (entry.announce) {
+      entry.announce = false;
+      toast(it.by ? `✨ รูปใหม่จาก ${it.by} · New photo from ${it.by}` : '✨ รูปใหม่ · New photo!');
+    }
+    schedule();
+  }
+
+  function ago(t) {
+    const m = Math.max(0, Math.round((Date.now() - t) / 60000));
+    if (m < 1) return 'เมื่อสักครู่ · just now';
+    if (m < 60) return `${m} นาทีที่แล้ว · ${m} min ago`;
+    const h = Math.round(m / 60);
+    if (h < 24) return `${h} ชั่วโมงที่แล้ว · ${h} h ago`;
+    const d = Math.round(h / 24);
+    return `${d} วันที่แล้ว · ${d} ${d === 1 ? 'day' : 'days'} ago`;
+  }
+
+  let toastTimer = 0;
+  function toast(text) {
+    const t = $('showToast');
+    t.textContent = text;
+    t.classList.add('on');
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => t.classList.remove('on'), 4500);
+  }
+
+  function togglePause() {
+    ss.paused = !ss.paused;
+    $('showPaused').hidden = !ss.paused;
+    if (ss.paused) { clearTimeout(ss.timer); ss.timer = 0; }
+    else if (ss.current) schedule();
+    else step(1);
+  }
+
+  function fullScreen() {
+    const el = document.documentElement;
+    if (document.fullscreenElement) document.exitFullscreen();
+    else if (el.requestFullscreen) el.requestFullscreen().catch(() => {});
+  }
+  $('showFs').onclick = fullScreen;
+  document.addEventListener('fullscreenchange', () => showEl.classList.toggle('full', !!document.fullscreenElement));
+
+  document.addEventListener('keydown', (e) => {
+    if (document.body.dataset.view !== 'show' || e.ctrlKey || e.metaKey || e.altKey) return;
+    const k = e.key.toLowerCase();
+    if (k === ' ' || k === 'k') { e.preventDefault(); togglePause(); }
+    else if (k === 'arrowright') step(1);
+    else if (k === 'arrowleft') step(-1);
+    else if (k === 'n') showEl.classList.toggle('bare');
+    else if (k === 'f') fullScreen();
+    else if (k === 'q') exitShow();
+  });
+  // Back to the album (keeps ?preview when testing). Esc only leaves full screen,
+  // so a stray key press at the reception can't close the slideshow.
+  function exitShow() {
+    if (document.fullscreenElement) document.exitFullscreen().catch(() => {});
+    location.href = PREVIEW && location.protocol !== 'file:' ? '/?preview' : '/';
+  }
+  $('showExit').onclick = (e) => { e.preventDefault(); exitShow(); };
+  if (PREVIEW && location.protocol !== 'file:') $('goShow').href = '/?page=show&preview';
+
+  // Hide the mouse pointer and the help line when nobody is touching the laptop.
+  function idleCursor() {
+    let t = 0;
+    const wake = () => {
+      showEl.classList.remove('idle');
+      clearTimeout(t);
+      t = setTimeout(() => showEl.classList.add('idle'), 3000);
+    };
+    ['mousemove', 'mousedown', 'keydown', 'touchstart'].forEach(ev => document.addEventListener(ev, wake, { passive: true }));
+    wake();
+  }
+
+  // Ask the browser not to dim or sleep the screen (Chrome, Edge, Safari 16.4+).
+  async function keepAwake() {
+    try {
+      if ('wakeLock' in navigator && document.visibilityState === 'visible') await navigator.wakeLock.request('screen');
+    } catch (_) { /* not supported or refused: set the laptop not to sleep */ }
+  }
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'visible' && document.body.dataset.view === 'show') keepAwake();
+  });
+
+  // QR code to the upload page. The library is only loaded on the slideshow;
+  // if it can't load, the address is still shown as text.
+  function drawQr() {
+    const url = location.origin + '/?page=upload';
+    $('qrUrl').textContent = location.host + '/?page=upload';
+    const s = document.createElement('script');
+    s.src = 'https://cdnjs.cloudflare.com/ajax/libs/qrcode-generator/1.4.4/qrcode.min.js';
+    s.onload = () => {
+      try {
+        const qr = window.qrcode(0, 'M');
+        qr.addData(url);
+        qr.make();
+        $('qrBox').innerHTML = qr.createSvgTag({ cellSize: 4, margin: 2, scalable: true });
+      } catch (_) { /* leave the text address */ }
+    };
+    document.head.appendChild(s);
+  }
+
   /* ================= start ================= */
-  // A link ending in ?page=upload opens straight on the upload page.
+  // A link ending in ?page=upload opens straight on the upload page,
+  // and ?page=show opens the slideshow for the reception screen.
   function start(params) {
+    if (params && params.page === 'show') return startShow();
     if (params && params.page === 'upload') show('upload');
     loadPeople(false);
     loadAlbum(true);
