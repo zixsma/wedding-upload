@@ -1464,7 +1464,7 @@
     const mine = ++loadSeq; // quick ← → presses: only the last one wins
     // Placeholder timer so a poll doesn't start a second slideshow while this loads.
     ss.timer = setTimeout(() => {}, slideMs());
-    pre.onload = () => { if (mine !== loadSeq) return; fails = 0; paint(entry, url); };
+    pre.onload = () => { if (mine !== loadSeq) return; fails = 0; paintSlide(entry, url); };
     pre.onerror = () => {
       if (mine !== loadSeq) return;
       // e.g. a video Google is still processing: skip it for now.
@@ -1474,7 +1474,9 @@
     pre.src = url;
   }
 
-  function paint(entry, url) {
+  // (Not called "paint": the upload page already has a paint(it) for its progress bars,
+  // and a second function with the same name silently replaces the first.)
+  function paintSlide(entry, url) {
     const it = entry.it;
     const next = ss.layers[1 - ss.cur], prev = ss.layers[ss.cur];
     const src = it.video && opts.video ? videoUrl(it) : null;
