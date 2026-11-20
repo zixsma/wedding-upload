@@ -271,6 +271,18 @@
   .show-link:hover { border-color: var(--pink); background: var(--pink-wash); }
   .show-link:focus-visible { outline: 3px solid var(--pink-soft); outline-offset: 2px; }
 
+  .upload-tip { display: none; text-align: left; font-size: 14px; color: var(--ink-soft); margin: 22px 4px 0; line-height: 1.5; }
+  .drop-overlay {
+    position: fixed; inset: 0; z-index: 60; display: grid; place-items: center; pointer-events: none;
+    background: rgba(238, 111, 147, .25); border: 6px dashed var(--pink); 
+  }
+  .drop-overlay[hidden] { display: none; }
+  .drop-overlay > div {
+    background: #fff; color: var(--pink-deep); border-radius: 24px; padding: 26px 40px; text-align: center;
+    font-size: 22px; box-shadow: 0 12px 40px rgba(186, 92, 120, .3);
+  }
+  .drop-overlay .big { font-size: 56px; }
+
   /* ---------- wide screens: sidebar + bigger album ---------- */
   body[data-view="upload"] .album-intro { display: none; }
   /* Only in the wide layout; phones use the chips row + "More names" sheet. */
@@ -291,25 +303,75 @@
   .side-list button:focus-visible { outline: 3px solid var(--pink-soft); outline-offset: 1px; }
   @media (min-width: 900px) {
     /* overflow: clip (not hidden) so the sidebar can stick while the page scrolls. */
-    body[data-view="album"] .card { max-width: 1160px; padding: 56px 80px 48px; overflow: clip; }
-    body[data-view="album"] .content {
+    body:is([data-view="album"], [data-view="upload"]) .card { max-width: 1160px; padding: 56px 80px 48px; overflow: clip; }
+    body:is([data-view="album"], [data-view="upload"]) .content {
       display: grid; grid-template-columns: 300px minmax(0, 1fr); column-gap: 44px; align-items: start;
     }
-    body[data-view="album"] .side {
+    body:is([data-view="album"], [data-view="upload"]) .side {
       position: sticky; top: 20px; max-height: calc(100vh - 40px); overflow-y: auto;
       overscroll-behavior: contain; scrollbar-width: thin; padding: 0 4px 8px;
     }
-    body[data-view="album"] .side h1 { font-size: 54px; margin-top: 12px; }
-    body[data-view="album"] .side .hero { max-width: 210px; }
+    body:is([data-view="album"], [data-view="upload"]) .side h1 { font-size: 54px; margin-top: 12px; }
+    body:is([data-view="album"], [data-view="upload"]) .side .hero { max-width: 210px; }
     body[data-view="album"] .side .lede { font-size: 17px; margin-top: 14px; }
     body[data-view="album"] .side .lede-en { margin-bottom: 4px; }
     body[data-view="album"] .side .btn { font-size: 18px; }
-    body[data-view="album"] .palette,
-    body[data-view="album"] .content > .foot { grid-column: 1 / -1; }
+    body:is([data-view="album"], [data-view="upload"]) .palette,
+    body:is([data-view="album"], [data-view="upload"]) .content > .foot { grid-column: 1 / -1; }
     body[data-view="album"] #chips { display: none; }
     body[data-view="album"] .side-names:not([hidden]) { display: block; }
     body[data-view="album"] .count { text-align: left; font-size: 17px; color: var(--ink); margin: 6px 2px 12px; }
     .grid { grid-template-columns: repeat(4, 1fr); gap: 8px; }
+
+    /* ----- upload page, wide ----- */
+    body[data-view="upload"] .upload-tip { display: block; }
+    body[data-view="upload"] #view-upload .form { text-align: left; }
+    body[data-view="upload"] #view-upload .back { margin-top: 0; padding-left: 0; }
+    body[data-view="upload"] #view-upload .lede { font-size: 22px; }
+    body[data-view="upload"] .picker { padding: 46px 20px; text-align: center; }
+    body[data-view="upload"] .picker .big { font-size: 56px; }
+    body[data-view="upload"] .picker .t1 { font-size: 24px; }
+    body[data-view="upload"] .list {
+      display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 10px;
+    }
+    body[data-view="upload"] .item {
+      position: relative; display: block; aspect-ratio: 1; padding: 0; margin: 0; overflow: hidden;
+      border-radius: 14px; border: 0; background: var(--pink-wash);
+    }
+    body[data-view="upload"] .item .thumb {
+      width: 100%; height: 100%; border-radius: 0; font-size: 40px; background: var(--pink-wash);
+    }
+    body[data-view="upload"] .item .meta {
+      position: absolute; left: 0; right: 0; bottom: 0; padding: 18px 8px 7px; color: #fff;
+      background: linear-gradient(transparent, rgba(43, 20, 28, .65));
+    }
+    body[data-view="upload"] .item .name { font-size: 12px; }
+    body[data-view="upload"] .item .sub { font-size: 11px; color: rgba(255, 255, 255, .9); }
+    body[data-view="upload"] .item .sub.err { color: #ffd1dc; }
+    body[data-view="upload"] .item .bar { height: 5px; margin-top: 4px; background: rgba(255, 255, 255, .35); }
+    body[data-view="upload"] .item .rm {
+      position: absolute; top: 6px; right: 6px; width: 30px; height: 30px; padding: 0; border-radius: 50%;
+      background: rgba(43, 20, 28, .5); color: #fff; font-size: 20px; line-height: 30px;
+    }
+    body[data-view="upload"] .item .rm:hover { background: var(--err); }
+    body[data-view="upload"] .item .state {
+      position: absolute; top: 6px; right: 6px; width: auto; font-size: 20px;
+      text-shadow: 0 1px 4px rgba(0, 0, 0, .4);
+    }
+    body[data-view="upload"] .item.done::after {
+      content: ''; position: absolute; inset: 0; border: 3px solid var(--ok); border-radius: 14px; pointer-events: none;
+    }
+    /* Summary + Send stay at the bottom of the window however long the list gets. */
+    body[data-view="upload"] .send-bar {
+      position: sticky; bottom: 16px; z-index: 2; margin-top: 18px;
+      display: flex; align-items: center; gap: 16px; padding: 12px 14px 12px 20px;
+      background: #fff; border: 1.5px solid var(--pink-soft); border-radius: 999px;
+      box-shadow: 0 8px 24px rgba(186, 92, 120, .2);
+    }
+    body[data-view="upload"] .send-bar .summary { order: -1; flex: 1; margin: 0; text-align: left; }
+    body[data-view="upload"] .send-bar .btn { width: auto; margin: 0; padding: 12px 28px; font-size: 18px; flex: none; }
+    body[data-view="upload"] .thanks { padding-top: 30px; }
+    body.is-done[data-view="upload"] .side .hero { display: block; } /* phones hide it on the thank-you screen; here it's the sidebar */
   }
   @media (min-width: 1150px) {
     .grid { grid-template-columns: repeat(5, 1fr); }
@@ -540,6 +602,7 @@
           <ul class="side-list" id="sideList"></ul>
         </nav>
       </div>
+      <p class="upload-tip">💡 ลากรูปหรือวิดีโอมาวางตรงไหนของหน้านี้ก็ได้ เลือกได้ทีละหลายไฟล์ · Tip: drag photos and videos anywhere onto this page, as many as you like</p>
     </div>
 
     <!-- ===== Page 1: album ===== -->
@@ -586,8 +649,10 @@
 
         <ul class="list" id="list"></ul>
 
-        <button class="btn" id="send" disabled>ส่งให้บ่าวสาว · Send ♥</button>
-        <div class="summary" id="summary"></div>
+        <div class="send-bar">
+          <button class="btn" id="send" disabled>ส่งให้บ่าวสาว · Send ♥</button>
+          <div class="summary" id="summary"></div>
+        </div>
       </section>
 
       <section class="thanks" aria-live="polite">
@@ -609,6 +674,11 @@
     <div class="foot">นางสาวเรืองริน อินธิแสง &amp; นายธนกฤต สายศิลปี</div>
   </div>
 </main>
+
+<!-- Shown while files are dragged over the page (album or upload). -->
+<div class="drop-overlay" id="dropOverlay" hidden>
+  <div><div class="big">📸</div>วางเพื่อเพิ่มรูป · Drop to add your photos &amp; videos</div>
+</div>
 
 <!-- Slideshow for the reception screen: open /?page=show on the projector laptop. -->
 <div class="show" id="show" hidden>
@@ -1300,6 +1370,37 @@
   ['dragenter', 'dragover'].forEach(ev => picker.addEventListener(ev, e => { e.preventDefault(); picker.classList.add('drag'); }));
   ['dragleave', 'drop'].forEach(ev => picker.addEventListener(ev, e => { e.preventDefault(); picker.classList.remove('drag'); }));
   picker.addEventListener('drop', e => addFiles(e.dataTransfer.files));
+
+  // Drop files anywhere on the album or upload page, not just on the 📸 box.
+  // (Without this, a file dropped outside the box makes the browser open it and leave the site.)
+  const pageDropOverlay = $('dropOverlay');
+  let pageDragDepth = 0;
+  const pageDragHasFiles = (e) => !!(e.dataTransfer && Array.from(e.dataTransfer.types || []).includes('Files'));
+  const pageTakesDrops = () => ['album', 'upload'].includes(document.body.dataset.view) && !busy;
+  window.addEventListener('dragenter', (e) => {
+    if (!pageDragHasFiles(e) || !pageTakesDrops()) return;
+    pageDragDepth++;
+    pageDropOverlay.hidden = false;
+  });
+  window.addEventListener('dragleave', (e) => {
+    if (!pageDragHasFiles(e)) return;
+    if (--pageDragDepth <= 0) { pageDragDepth = 0; pageDropOverlay.hidden = true; }
+  });
+  window.addEventListener('dragover', (e) => {
+    if (!pageDragHasFiles(e)) return;
+    e.preventDefault(); // allow dropping here instead of the browser opening the file
+    e.dataTransfer.dropEffect = pageTakesDrops() ? 'copy' : 'none';
+  });
+  window.addEventListener('drop', (e) => {
+    if (!pageDragHasFiles(e)) return;
+    e.preventDefault();
+    pageDragDepth = 0;
+    pageDropOverlay.hidden = true;
+    if (!pageTakesDrops() || picker.contains(e.target)) return; // the 📸 box handles its own drops
+    if (document.body.classList.contains('is-done')) resetUpload();
+    if (document.body.dataset.view !== 'upload') show('upload');
+    addFiles(e.dataTransfer.files);
+  });
   sendBtn.addEventListener('click', sendAll);
   $('more').addEventListener('click', resetUpload);
   $('backAlbum').addEventListener('click', () => { if (!busy) show('album'); });
